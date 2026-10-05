@@ -1,0 +1,20 @@
+name: dialog_dock_example
+description: Demo of dialog_dock.
+publish_to: none
+version: 1.0.0
+
+environment:
+  sdk: ">=3.7.0 <4.0.0"
+  flutter: ">=3.29.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dialog_dock:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
