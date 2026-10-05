@@ -45,7 +45,8 @@ class FloatingDialogHolder extends StatefulWidget {
   /// The app, usually the `child` given to `MaterialApp.builder`.
   final Widget child;
 
-  /// Sizes, colors, timings and limits.
+  /// Sizes, colors, timings and limits. Read once, when the holder is
+  /// created; give the holder a new `key` to apply a different config.
   final FloatingDialogConfig config;
 
   /// Storage, current user, messages and texts.

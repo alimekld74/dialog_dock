@@ -6,9 +6,11 @@ exactly as it was: typed text, scroll position, open tabs, everything.
 
 It's a drop-in for `showDialog`: your existing dialog widgets work unchanged.
 
-- Minimize, pin, maximize and close buttons on every window
+- Minimize, pin, maximize and close buttons on every window: macOS traffic
+  lights by default, with Dock-style hover magnification
 - Bubbles in a collapsible holder; pinned windows on the screen edge
 - macOS-style Genie minimize, and Hero-style open/close from the tapped widget
+- Optional macOS "Liquid Glass" windows, holder bar and dock
 - `Navigator.pop(context, result)` returns the result, like `showDialog`
 - Dialogs opened from a window stay above it
 - Back (Android, browser) and Esc dismiss the window, never the page below
@@ -17,14 +19,24 @@ It's a drop-in for `showDialog`: your existing dialog widgets work unchanged.
 - Custom colors, icons (including SVG), header buttons and window design
 - Light / dark themes, RTL, phones, tablets and desktop; all platforms
 
-## Quick start
+## Getting started
 
-```yaml
-dependencies:
-  dialog_dock: ^0.1.0
+### 1. Install
+
+```bash
+flutter pub add dialog_dock
 ```
 
-**1. Wrap your app once:**
+and import it:
+
+```dart
+import 'package:dialog_dock/dialog_dock.dart';
+```
+
+### 2. Wrap your app once
+
+Put `FloatingDialogHolder` in `MaterialApp.builder` (or `CupertinoApp` /
+`WidgetsApp`), so windows float above every page:
 
 ```dart
 MaterialApp(
@@ -33,19 +45,131 @@ MaterialApp(
 );
 ```
 
-**2. Replace `showDialog` with `showFloatingDialog`:**
+There is no controller, provider or state management to set up.
+
+### 3. Show a dialog
+
+Use `showFloatingDialog` where you used `showDialog`. Your dialog widget stays
+the same:
 
 ```dart
 final confirmed = await showFloatingDialog<bool>(
   context: context,
   id: 'delete-item',          // one window per id
-  title: 'Delete item',
+  title: 'Delete item',       // window title and bubble label
   icon: Icons.delete_outline, // shown on the bubble
-  builder: (context) => const MyExistingDialog(), // unchanged
+  builder: (context) => AlertDialog(
+    content: const Text('Delete this item?'),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('Cancel'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, true),
+        child: const Text('Delete'),
+      ),
+    ],
+  ),
+);
+// true / false from Navigator.pop, or null when closed another way.
+```
+
+### A complete app
+
+```dart
+import 'package:dialog_dock/dialog_dock.dart';
+import 'package:flutter/material.dart';
+
+void main() => runApp(
+  MaterialApp(
+    builder: (context, child) => FloatingDialogHolder(child: child!),
+    home: const HomePage(),
+  ),
+);
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: FilledButton(
+          onPressed: () => showFloatingDialog<void>(
+            context: context,
+            id: 'notes',
+            title: 'Notes',
+            icon: Icons.edit_note,
+            builder: (context) => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: TextField(
+                maxLines: null,
+                decoration: InputDecoration(
+                  hintText: 'Type, minimize, come back...',
+                ),
+              ),
+            ),
+          ),
+          child: const Text('Open notes'),
+        ),
+      ),
+    );
+  }
+}
+```
+
+Type something, press the yellow minimize button, then tap the bubble in the
+corner: the text is still there.
+
+### What your users get
+
+- **Minimize** (yellow): the window pours into a bubble in the corner.
+- **Pin** (blue): minimized pinned windows sit on the screen edge instead.
+- **Maximize** (green): a larger window; press again to restore.
+- **Close** (red), tap outside, Back or Esc: closes it. A window that was
+  minimized before, or is pinned, goes back to its bubble instead.
+- **Tap a bubble**: the window comes back exactly as it was.
+
+### `showFloatingDialog` parameters
+
+| Parameter | What it does |
+|---|---|
+| `context`, `id`, `title`, `builder` | Required. One window per `id`; opening it again brings that window back. |
+| `icon` / `iconBuilder` | Bubble icon: an `IconData`, or any widget (SVG, image). |
+| `headerActions` | Extra title-bar buttons, each with its own `onPressed`. |
+| `windowButtons` | Which built-in buttons to show (minimize, pin, maximize, close). |
+| `size` | Window size as a fraction of the screen. |
+| `showFrame` | `false` gives the dialog the whole window (draw your own header). |
+| `frameBuilder` | Draw this window's chrome yourself. |
+| `originKey` | `GlobalKey` of the tapped widget: open from it and close back into it. |
+| `canPause` | Return `false` to refuse minimizing right now. |
+| `isAvailable` | Permission check before every restore. |
+| `isRestorable` | Bring the bubble back after an app restart (see below). |
+
+### Configure the look once
+
+Pass a `FloatingDialogConfig` to the holder; every field is optional:
+
+```dart
+FloatingDialogHolder(
+  config: const FloatingDialogConfig(
+    liquidGlass: true,                                   // macOS glass
+    windowButtonStyle: FloatingDialogWindowButtonStyle.trafficLights,
+    minimizeEffect: FloatingDialogMinimizeEffect.genie,  // or scale / fade
+    closeEffect: FloatingDialogCloseEffect.slideDown,    // or fade
+    maxMountedWindows: 10,                               // memory limit
+    holderBottomOffset: 72,                              // clear a bottom bar
+  ),
+  child: child!,
 );
 ```
 
-That's it. There is no controller, provider or state management to set up.
+The holder reads its config once. To change it while the app runs, give the
+holder a new `key`; this closes open windows.
+
+The [example app](example/) shows every feature with live switches for the
+look.
 
 ## How it behaves
 

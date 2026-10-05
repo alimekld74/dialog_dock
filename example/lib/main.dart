@@ -1,240 +1,128 @@
+// dialog_dock example: a gallery of what the package can do.
+//
+// The whole setup is two steps:
+//   1. Wrap your app once with FloatingDialogHolder (see `builder` below).
+//   2. Call showFloatingDialog where you used showDialog (see src/basics.dart).
 import 'package:dialog_dock/dialog_dock.dart';
 import 'package:flutter/material.dart';
 
-void main() => runApp(const DemoApp());
+import 'src/basics.dart';
+import 'src/customization.dart';
+import 'src/gallery.dart';
+import 'src/look.dart';
 
-class DemoApp extends StatefulWidget {
-  const DemoApp({super.key});
+void main() => runApp(const ExampleApp());
+
+class ExampleApp extends StatefulWidget {
+  const ExampleApp({super.key});
 
   @override
-  State<DemoApp> createState() => _DemoAppState();
+  State<ExampleApp> createState() => _ExampleAppState();
 }
 
-class _DemoAppState extends State<DemoApp> {
-  ThemeMode _mode = ThemeMode.light;
-  TextDirection _direction = TextDirection.ltr;
+class _ExampleAppState extends State<ExampleApp> {
+  Look _look = const Look();
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Floating dialogs',
-      themeMode: _mode,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        // Optional: per-theme holder colors.
-        extensions: const [FloatingDialogColors(dockClose: Colors.deepOrange)],
-      ),
+      title: 'dialog_dock',
+      debugShowCheckedModeBanner: false,
+      themeMode: _look.dark ? ThemeMode.dark : ThemeMode.light,
+      theme: ThemeData(colorSchemeSeed: Colors.indigo),
       darkTheme: ThemeData(
         colorSchemeSeed: Colors.indigo,
         brightness: Brightness.dark,
       ),
-      // 1. Wrap the app once.
+      // STEP 1: wrap the app once. No controller or provider to set up.
       builder:
           (context, child) => Directionality(
-            textDirection: _direction,
+            textDirection: _look.rtl ? TextDirection.rtl : TextDirection.ltr,
             child: FloatingDialogHolder(
-              config: const FloatingDialogConfig(maxMountedWindows: 5),
+              // The config is read once; a new key applies a new look.
+              key: ValueKey(_look.configKey),
+              config: _look.toConfig(),
               child: child!,
             ),
           ),
       home: HomePage(
-        onToggleTheme:
-            () => setState(
-              () =>
-                  _mode =
-                      _mode == ThemeMode.light
-                          ? ThemeMode.dark
-                          : ThemeMode.light,
-            ),
-        onToggleDirection:
-            () => setState(
-              () =>
-                  _direction =
-                      _direction == TextDirection.ltr
-                          ? TextDirection.rtl
-                          : TextDirection.ltr,
-            ),
+        look: _look,
+        onLookChanged: (look) => setState(() => _look = look),
       ),
     );
   }
 }
 
 class HomePage extends StatelessWidget {
-  const HomePage({
-    super.key,
-    required this.onToggleTheme,
-    required this.onToggleDirection,
-  });
+  const HomePage({super.key, required this.look, required this.onLookChanged});
 
-  final VoidCallback onToggleTheme;
-  final VoidCallback onToggleDirection;
+  final Look look;
+  final ValueChanged<Look> onLookChanged;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Floating dialogs'),
-        actions: [
-          IconButton(
-            tooltip: 'Theme',
-            onPressed: onToggleTheme,
-            icon: const Icon(Icons.brightness_6),
+      appBar: AppBar(title: const Text('dialog_dock')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+        children: [
+          const Section(
+            title: 'Basics',
+            subtitle:
+                'Minimize (yellow), pin (blue) or close (red) a window. '
+                'Tap its bubble in the corner to bring it back.',
+            child: BasicsDemos(),
           ),
-          IconButton(
-            tooltip: 'Direction',
-            onPressed: onToggleDirection,
-            icon: const Icon(Icons.format_textdirection_r_to_l),
+          const Section(
+            title: 'Customization',
+            subtitle: 'Icons, header buttons and your own window design.',
+            child: CustomizationDemos(),
+          ),
+          const Section(
+            title: 'Like a Hero',
+            subtitle: 'The window grows out of the tile and shrinks back.',
+            child: GalleryDemo(),
+          ),
+          Section(
+            title: 'Look',
+            subtitle: 'Changing the look restarts the holder.',
+            child: LookPanel(look: look, onChanged: onLookChanged),
           ),
         ],
       ),
-      body: Center(
-        child: Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.center,
-          children: [
-            FilledButton(
-              onPressed: () => _openExistingDialog(context),
-              child: const Text('Existing AlertDialog'),
-            ),
-            FilledButton(
-              onPressed: () => _openNotes(context),
-              child: const Text('Notes (custom icon, header action)'),
-            ),
-            FilledButton(
-              onPressed: () => _openCustomFrame(context),
-              child: const Text('Custom frame'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 2. Replace showDialog with showFloatingDialog. The dialog is unchanged.
-  Future<void> _openExistingDialog(BuildContext context) async {
-    final confirmed = await showFloatingDialog<bool>(
-      context: context,
-      id: 'confirm',
-      title: 'Delete item',
-      icon: Icons.delete_outline,
-      builder:
-          (context) => AlertDialog(
-            content: const Text('Minimize me, browse around, come back.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-    );
-    if (context.mounted && confirmed != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Confirmed: $confirmed')));
-    }
-  }
-
-  void _openNotes(BuildContext context) {
-    showFloatingDialog<void>(
-      context: context,
-      id: 'notes',
-      title: 'Notes',
-      // Any widget works here, e.g. SvgPicture.asset(..., colorFilter: ...).
-      iconBuilder:
-          (context, color, size) => Text(
-            'N',
-            style: TextStyle(
-              color: color,
-              fontSize: size,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-      headerActions: [
-        FloatingDialogHeaderAction(
-          tooltip: 'Clear',
-          icon: Icons.clear_all,
-          onPressed:
-              (context) => ScaffoldMessenger.maybeOf(
-                context,
-              )?.showSnackBar(const SnackBar(content: Text('Clear tapped'))),
-        ),
-      ],
-      builder: (context) => const NotesDialog(),
-    );
-  }
-
-  void _openCustomFrame(BuildContext context) {
-    showFloatingDialog<void>(
-      context: context,
-      id: 'custom',
-      title: 'Custom frame',
-      icon: Icons.palette_outlined,
-      windowButtons: const {
-        FloatingDialogWindowButton.minimize,
-        FloatingDialogWindowButton.close,
-      },
-      frameBuilder:
-          (context, frame) => Card(
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.palette_outlined),
-                  title: Text(frame.title),
-                  trailing: frame.buttons,
-                ),
-                const Divider(height: 1),
-                Expanded(child: frame.body),
-              ],
-            ),
-          ),
-      builder:
-          (context) => const Center(child: Text('Any header, shape or color.')),
     );
   }
 }
 
-/// Keeps its text when minimized, and even when evicted to save memory.
-class NotesDialog extends StatefulWidget {
-  const NotesDialog({super.key});
+/// A titled card on the home page.
+class Section extends StatelessWidget {
+  const Section({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
 
-  @override
-  State<NotesDialog> createState() => _NotesDialogState();
-}
-
-class _NotesDialogState extends State<NotesDialog> {
-  final _text = TextEditingController();
-
-  @override
-  void dispose() {
-    _text.dispose();
-    super.dispose();
-  }
+  final String title;
+  final String subtitle;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return FloatingDialogStateKeeper<String>(
-      onSave: () => _text.text,
-      onRestore: (text) => _text.text = text,
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.only(top: 16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: TextField(
-          controller: _text,
-          maxLines: null,
-          expands: true,
-          decoration: const InputDecoration(
-            hintText: 'Type, minimize, come back...',
-            border: OutlineInputBorder(),
-          ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: theme.textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(subtitle, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 16),
+            child,
+          ],
         ),
       ),
     );
