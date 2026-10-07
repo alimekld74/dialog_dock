@@ -136,6 +136,9 @@ corner: the text is still there.
 - **Close** (red), tap outside, Back or Esc: closes it. A window that was
   minimized before, or is pinned, goes back to its bubble instead.
 - **Tap a bubble**: the window comes back exactly as it was.
+- **Drag the holder** anywhere on the screen. It stays there while the app
+  runs and goes back to its corner after a restart
+  (`holderDraggable: false` turns this off).
 
 ### `showFloatingDialog` parameters
 

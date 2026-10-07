@@ -132,6 +132,11 @@ class FloatingDialogHolderWidgetState extends State<FloatingDialogHolder> {
   final Map<Object, BuildContext> _anchors = {};
   final _effectsKey = GlobalKey<FloatingDialogEffectsLayerState>();
 
+  /// Where the user dragged the holder bar: its bottom-center as a fraction
+  /// of the holder's area, or null for the default corner. Kept in memory
+  /// only, so it lasts while the app runs and resets on restart.
+  final holderBarAnchor = ValueNotifier<Offset?>(null);
+
   /// Plays window animations above everything.
   FloatingDialogEffectsLayerState? get effects => _effectsKey.currentState;
 
@@ -286,6 +291,7 @@ class FloatingDialogHolderWidgetState extends State<FloatingDialogHolder> {
     _backRoute = null;
     if (route != null && route.isActive) route.navigator?.removeRoute(route);
     if (widget.controller == null) holder.close();
+    holderBarAnchor.dispose();
     super.dispose();
   }
 

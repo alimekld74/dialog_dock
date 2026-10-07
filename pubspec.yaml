@@ -2,7 +2,7 @@ name: dialog_dock
 description: >-
   Minimize Flutter dialogs into a floating holder instead of closing them,
   then restore them with their state intact. A drop-in for showDialog.
-version: 0.1.1
+version: 0.1.2
 repository: https://github.com/alimekld74/dialog_dock
 issue_tracker: https://github.com/alimekld74/dialog_dock/issues
 screenshots:

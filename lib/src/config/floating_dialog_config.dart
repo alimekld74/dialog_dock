@@ -183,6 +183,7 @@ class FloatingDialogConfig {
     this.holderItemSpacing = 6,
     this.holderBottomOffset = 16,
     this.holderEndOffset = 8,
+    this.holderDraggable = true,
     this.holderMaxHeightFactor = 0.4,
     this.holderItemDiameter = 40,
     this.holderTouchItemDiameter = 48,
@@ -369,6 +370,11 @@ class FloatingDialogConfig {
 
   /// Distance of the holder bar from the end edge (start edge on phones).
   final double holderEndOffset;
+
+  /// Users can drag the holder bar anywhere on the screen. The spot is kept
+  /// in memory while the app runs (across windows and pages) and resets to
+  /// the corner when the app restarts.
+  final bool holderDraggable;
 
   /// Maximum holder bar height as a fraction of the screen height; extra
   /// items scroll.

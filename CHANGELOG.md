@@ -1,3 +1,9 @@
+## 0.1.2
+
+- The holder bar can be dragged anywhere on the screen. The spot is kept in
+  memory while the app runs and resets to the corner on restart. Turn it off
+  with `FloatingDialogConfig(holderDraggable: false)`.
+
 ## 0.1.1
 
 - Screenshots on pub.dev and in the README (desktop, mobile, dark mode,

@@ -1,5 +1,6 @@
 import 'package:dialog_dock/dialog_dock.dart';
 import 'package:dialog_dock/src/view/floating_dialog_effects.dart';
+import 'package:dialog_dock/src/view/widgets/floating_dialog_holder_item.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -1115,6 +1116,99 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(BackdropFilter), findsWidgets);
       expect(tester.takeException(), isNull);
+      await holder.close();
+    });
+  });
+
+  group('Draggable holder', () {
+    Finder bar() => find.byType(FloatingDialogGlassSurface);
+    final bubble = find.byIcon(Icons.inventory_2_outlined);
+
+    Future<FloatingDialogHolderCubit> withBubble(
+      WidgetTester tester, {
+      FloatingDialogConfig config = _config,
+    }) async {
+      _desktop(tester);
+      final holder = _cubit(config: config);
+      await tester.pumpWidget(_app(holder));
+      holder.open(_action('a'));
+      await tester.pumpAndSettle();
+      holder.minimize('a');
+      await tester.pumpAndSettle();
+      return holder;
+    }
+
+    testWidgets('moves anywhere; taps still work; the spot is kept', (
+      tester,
+    ) async {
+      final holder = await withBubble(tester);
+      final start = tester.getRect(bar());
+
+      await tester.drag(bar(), const Offset(-900, -500));
+      await tester.pumpAndSettle();
+      final moved = tester.getRect(bar());
+      expect(moved.center.dx, lessThan(start.center.dx - 800));
+      expect(moved.bottom, lessThan(start.bottom - 400));
+      expect(tester.takeException(), isNull);
+
+      // The bubble still restores on tap, and the spot survives a
+      // minimize / restore cycle.
+      await tester.tap(bubble);
+      await tester.pumpAndSettle();
+      expect(holder.state.entryOf('a')!.isActive, isTrue);
+      holder.minimize('a');
+      await tester.pumpAndSettle();
+      expect(tester.getRect(bar()), moved);
+
+      // Long press still pins.
+      await tester.longPress(bubble);
+      await tester.pumpAndSettle();
+      expect(holder.state.entryOf('a')!.isPinned, isTrue);
+      await holder.close();
+    });
+
+    testWidgets('stays fully on screen', (tester) async {
+      final holder = await withBubble(tester);
+      await tester.drag(bar(), const Offset(-5000, -5000));
+      await tester.pumpAndSettle();
+      var rect = tester.getRect(bar());
+      expect(rect.left, greaterThanOrEqualTo(0));
+      expect(rect.top, greaterThanOrEqualTo(0));
+
+      await tester.drag(bar(), const Offset(5000, 5000));
+      await tester.pumpAndSettle();
+      rect = tester.getRect(bar());
+      expect(rect.right, lessThanOrEqualTo(1600));
+      expect(rect.bottom, lessThanOrEqualTo(1000));
+      await holder.close();
+    });
+
+    testWidgets('back in its corner after an app restart', (tester) async {
+      final first = await withBubble(tester);
+      final corner = tester.getRect(bar());
+      await tester.drag(bar(), const Offset(-700, -300));
+      await tester.pumpAndSettle();
+      expect(tester.getRect(bar()), isNot(corner));
+
+      // Restart: the old holder goes away, a new one starts.
+      await tester.pumpWidget(const SizedBox());
+      await first.close();
+      final second = await withBubble(tester);
+      expect(tester.getRect(bar()), corner);
+      await second.close();
+    });
+
+    testWidgets('holderDraggable: false keeps it in its corner', (
+      tester,
+    ) async {
+      final holder = await withBubble(
+        tester,
+        config: const FloatingDialogConfig(holderDraggable: false),
+      );
+      final corner = tester.getRect(bar());
+      await tester.drag(bar(), const Offset(-700, -300));
+      await tester.pumpAndSettle();
+      expect(tester.getRect(bar()), corner);
       await holder.close();
     });
   });

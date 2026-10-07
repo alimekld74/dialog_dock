@@ -61,6 +61,16 @@ class _FloatingDialogEdgeDockState extends State<FloatingDialogEdgeDock> {
 
   @override
   Widget build(BuildContext context) {
+    final anchor = FloatingDialogHolderScope.stateOf(context)?.holderBarAnchor;
+    if (anchor == null) return _build(context, holderMoved: false);
+    return ValueListenableBuilder<Offset?>(
+      valueListenable: anchor,
+      builder:
+          (context, point, _) => _build(context, holderMoved: point != null),
+    );
+  }
+
+  Widget _build(BuildContext context, {required bool holderMoved}) {
     final config = context.floatingConfig;
     return BlocBuilder<FloatingDialogHolderCubit, FloatingDialogHolderState>(
       buildWhen:
@@ -77,9 +87,10 @@ class _FloatingDialogEdgeDockState extends State<FloatingDialogEdgeDock> {
         final hidden = pinned.isEmpty || state.isLargeWindowActive;
         final revealed = config.dockAlwaysExpanded || _revealed;
         final size = MediaQuery.sizeOf(context);
-        // The holder bar shares the end edge except on phones.
+        // The holder bar shares the end edge except on phones, or once the
+        // user moved it.
         final reserved =
-            context.isFloatingMobile || state.heldEntries.isEmpty
+            context.isFloatingMobile || holderMoved || state.heldEntries.isEmpty
                 ? 0.0
                 : config.holderBottomOffset +
                     size.height * config.holderMaxHeightFactor;
