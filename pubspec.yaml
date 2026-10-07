@@ -2,9 +2,26 @@ name: dialog_dock
 description: >-
   Minimize Flutter dialogs into a floating holder instead of closing them,
   then restore them with their state intact. A drop-in for showDialog.
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/alimekld74/dialog_dock
 issue_tracker: https://github.com/alimekld74/dialog_dock/issues
+screenshots:
+  - description: A window minimized and restored with its state, Liquid Glass style.
+    path: screenshots/window_light.png
+  - description: The same windows on phones, light, dark and Arabic (RTL).
+    path: screenshots/mobile.png
+  - description: macOS-style Genie animation while minimizing a window.
+    path: screenshots/genie_minimize.png
+  - description: Setup in three steps.
+    path: screenshots/how_to_use.png
+  - description: Window buttons, colors and Liquid Glass from one config.
+    path: screenshots/customization.png
+  - description: Minimized and pinned windows in dark mode.
+    path: screenshots/dock_dark.png
+  - description: Full right-to-left support, shown in Arabic.
+    path: screenshots/arabic_rtl.png
+  - description: A customer window in dark mode.
+    path: screenshots/window_dark.png
 topics:
   - dialog
   - window

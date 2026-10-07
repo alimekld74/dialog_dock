@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Screenshots on pub.dev and in the README (desktop, mobile, dark mode,
+  RTL, customization).
+
 ## 0.1.0
 
 First public release.

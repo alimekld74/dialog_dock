@@ -6,6 +6,12 @@ exactly as it was: typed text, scroll position, open tabs, everything.
 
 It's a drop-in for `showDialog`: your existing dialog widgets work unchanged.
 
+![A New order window over a store dashboard, with minimized windows in the corner](https://raw.githubusercontent.com/alimekld74/dialog_dock/main/screenshots/window_light.png)
+
+![The same windows on phones: light, dark and Arabic](https://raw.githubusercontent.com/alimekld74/dialog_dock/main/screenshots/mobile.png)
+
+![Genie animation while minimizing a window](https://raw.githubusercontent.com/alimekld74/dialog_dock/main/screenshots/genie_minimize.png)
+
 - Minimize, pin, maximize and close buttons on every window: macOS traffic
   lights by default, with Dock-style hover magnification
 - Bubbles in a collapsible holder; pinned windows on the screen edge
