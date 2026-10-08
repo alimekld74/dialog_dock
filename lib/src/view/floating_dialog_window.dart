@@ -220,10 +220,10 @@ class FloatingDialogWindowState extends State<FloatingDialogWindow> {
 
   /// Restoring: the window flies back out of its holder item.
   void _playRestore() {
-    final snapshot = _snapshot;
+    final stored = _snapshot;
     _snapshot = null;
-    if (!_effectsOn || snapshot == null) {
-      snapshot?.dispose();
+    if (!_effectsOn) {
+      stored?.dispose();
       _boxHidden.value = false;
       return;
     }
@@ -233,16 +233,25 @@ class FloatingDialogWindowState extends State<FloatingDialogWindow> {
     _boxHidden.value = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final effects = holderState.effects;
-      final to = rectOf(_boxKey);
-      if (!mounted || effects == null || to == null) {
-        snapshot.dispose();
+      // The window was just painted (nearly invisible) with the current
+      // theme and language. Picture that, not the snapshot taken when it
+      // was minimized, which may show an old theme or language.
+      final fresh =
+          mounted
+              ? captureFloatingWindow(_boxKey, pixelRatio: _pixelRatio)
+              : null;
+      final image = fresh?.$1 ?? stored;
+      if (fresh != null) stored?.dispose();
+      final to = fresh?.$2 ?? (mounted ? rectOf(_boxKey) : null);
+      if (!mounted || effects == null || to == null || image == null) {
+        image?.dispose();
         if (mounted) _boxHidden.value = false;
         return;
       }
       effects.play(
         kind: FloatingDialogEffectKind.restore,
         style: _config.minimizeEffect,
-        image: snapshot,
+        image: image,
         windowRect: to,
         target: () => from,
         duration: _config.minimizeEffectDuration,
@@ -303,8 +312,15 @@ class FloatingDialogWindowState extends State<FloatingDialogWindow> {
 
   void _onFadeEnd() {
     if (!mounted) return;
+    // With effects on the fade takes no time and ends during a build:
+    // apply it once that frame is done.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _onFadeEnd());
+      return;
+    }
     final active = _holder.state.entryOf(widget.id)?.isActive ?? false;
-    setState(() => _fadedOut = !active);
+    if (_fadedOut != !active) setState(() => _fadedOut = !active);
   }
 
   @override
@@ -349,7 +365,12 @@ class FloatingDialogWindowState extends State<FloatingDialogWindow> {
                     enabled: active || !_fadedOut,
                     child: AnimatedOpacity(
                       opacity: active ? 1 : 0,
-                      duration: config.windowAnimationDuration,
+                      // The minimize / restore effects show the window
+                      // themselves; the fade is for reduced motion.
+                      duration:
+                          _effectsOn
+                              ? Duration.zero
+                              : config.windowAnimationDuration,
                       curve: config.animationCurve,
                       onEnd: _onFadeEnd,
                       child: HeroControllerScope.none(
@@ -590,8 +611,10 @@ class _WindowBodyState extends State<_WindowBody>
                 final box = ValueListenableBuilder<bool>(
                   valueListenable: widget.boxHidden,
                   builder:
+                      // Hidden but still painted (1/255), so the window
+                      // can be pictured for the restore effect.
                       (context, hidden, child) =>
-                          Opacity(opacity: hidden ? 0 : 1, child: child),
+                          Opacity(opacity: hidden ? 1 / 255 : 1, child: child),
                   child: RepaintBoundary(
                     key: widget.boxKey,
                     child: AnimatedContainer(

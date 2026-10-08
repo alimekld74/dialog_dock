@@ -94,6 +94,12 @@ class FloatingDialogEffectsLayerState extends State<FloatingDialogEffectsLayer>
     with TickerProviderStateMixin {
   final List<FloatingDialogEffect> _effects = [];
 
+  /// The pictures of the effects playing now.
+  @visibleForTesting
+  List<ui.Image> get runningImages => [
+    for (final effect in _effects) effect.image,
+  ];
+
   /// The effects playing now.
   @visibleForTesting
   List<FloatingDialogEffectKind> get runningKinds => [

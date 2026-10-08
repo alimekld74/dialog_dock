@@ -1351,6 +1351,44 @@ void main() {
       });
     }
 
+    testWidgets('restore after a theme change animates the new theme', (
+      tester,
+    ) async {
+      _desktop(tester);
+      final holder = _cubit();
+      await tester.pumpWidget(_app(holder, theme: ThemeData.light()));
+      holder.open(_action('a'));
+      await tester.pumpAndSettle();
+      holder.minimize('a');
+      await tester.pumpAndSettle();
+
+      // Switch to dark while the window is minimized, then restore it.
+      await tester.pumpWidget(_app(holder, theme: ThemeData.dark()));
+      await tester.pumpAndSettle();
+      holder.restore('a');
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      final layer = tester.state<FloatingDialogEffectsLayerState>(
+        find.byType(FloatingDialogEffectsLayer),
+      );
+      expect(layer.runningKinds, [FloatingDialogEffectKind.restore]);
+      final image = layer.runningImages.single;
+      final brightness = await tester.runAsync(() async {
+        final data = await image.toByteData();
+        final bytes = data!.buffer.asUint8List();
+        var sum = 0;
+        for (var i = 0; i < bytes.length; i += 4) {
+          sum += bytes[i] + bytes[i + 1] + bytes[i + 2];
+        }
+        return sum / (bytes.length / 4) / 3;
+      });
+      // A dark window, not the light one it was minimized as.
+      expect(brightness, lessThan(100));
+      await tester.pumpAndSettle();
+      await holder.close();
+    });
+
     testWidgets('a header tooltip shown while opening survives the zoom', (
       tester,
     ) async {

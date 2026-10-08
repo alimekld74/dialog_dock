@@ -3,6 +3,9 @@
 - Fix: a `FloatingDialogHolder` inside another one (for example around a
   single page) now reuses the outer holder. Before, both holders showed a
   bar, and windows minimized on that page disappeared when leaving it.
+- Fix: restoring a window after changing the theme or language showed the
+  old theme or language during the restore animation. The animation now
+  pictures the window as it looks at that moment.
 
 ## 0.1.2
 
