@@ -30,6 +30,12 @@ import 'widgets/floating_dialog_holder_bar.dart';
 ///
 /// [config], [host] and [availabilityChanges] are read once, when the holder
 /// is created. Pass a [controller] to create and own it yourself.
+///
+/// One holder per app: a holder placed inside another one (for example
+/// around a single page) reuses the outer one, so there is never a second
+/// bar, and windows opened from that page survive leaving it. Its own
+/// [config], [host] and [availabilityChanges] are then ignored. A holder
+/// given its own [controller] always stays separate.
 class FloatingDialogHolder extends StatefulWidget {
   /// Creates a holder around [child].
   const FloatingDialogHolder({
@@ -285,8 +291,25 @@ class FloatingDialogHolderWidgetState extends State<FloatingDialogHolder> {
     return _appNavigatorCache = found ?? Navigator.maybeOf(context);
   }
 
+  /// True when another holder sits above this one: this one then steps
+  /// aside, so the app keeps a single holder. Decided once.
+  bool? _nested;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _nested ??=
+        widget.controller == null &&
+        FloatingDialogHolderScope.stateOf(context) != null;
+  }
+
   @override
   void dispose() {
+    if (_nested ?? false) {
+      holderBarAnchor.dispose();
+      super.dispose();
+      return;
+    }
     final route = _backRoute;
     _backRoute = null;
     if (route != null && route.isActive) route.navigator?.removeRoute(route);
@@ -297,6 +320,7 @@ class FloatingDialogHolderWidgetState extends State<FloatingDialogHolder> {
 
   @override
   Widget build(BuildContext context) {
+    if (_nested ?? false) return widget.child;
     return FloatingDialogHolderScope(
       state: this,
       child: BlocProvider.value(

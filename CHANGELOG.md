@@ -1,3 +1,9 @@
+## 0.1.3
+
+- Fix: a `FloatingDialogHolder` inside another one (for example around a
+  single page) now reuses the outer holder. Before, both holders showed a
+  bar, and windows minimized on that page disappeared when leaving it.
+
 ## 0.1.2
 
 - The holder bar can be dragged anywhere on the screen. The spot is kept in

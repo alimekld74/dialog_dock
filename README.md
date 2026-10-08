@@ -511,8 +511,11 @@ showFloatingDialog(..., isAvailable: () => permissions.can('treasury'));
   `restore`, `minimize`, `closeDialog(id, result)`, `togglePin`,
   `toggleSize`, `setLifetime`, `registerActions`.
 - Pass `controller:` to create and own it yourself (tests, DI).
-- Place the holder inside a route instead of `MaterialApp.builder` if
-  windows should only live on part of the app; Back handling still works.
+- One holder per app: a `FloatingDialogHolder` placed inside another one
+  (say, around a single page) reuses the outer one, so users never see two
+  bars and windows opened from that page survive leaving it. Without an
+  app-wide holder, a holder around one page keeps its windows to that page
+  (they close when the page closes).
 - Pass `navigatorKey:` if the holder can't find your app's navigator.
 
 ## Platform notes

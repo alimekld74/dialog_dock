@@ -1213,6 +1213,73 @@ void main() {
     });
   });
 
+  group('Nested holders', () {
+    testWidgets('a holder inside another reuses it: one bar, windows '
+        'survive leaving the page', (tester) async {
+      _desktop(tester);
+      final holder = _cubit();
+      final pageKey = GlobalKey();
+      await tester.pumpWidget(_app(holder));
+      holder.open(_action('home'));
+      await tester.pumpAndSettle();
+      holder.minimize('home');
+      await tester.pumpAndSettle();
+
+      // A page with its own FloatingDialogHolder.
+      _navigatorKey.currentState!.push(
+        MaterialPageRoute<void>(
+          builder:
+              (_) => FloatingDialogHolder(
+                child: Scaffold(key: pageKey, body: const SizedBox.expand()),
+              ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(FloatingDialogHolder.of(pageKey.currentContext!), same(holder));
+      showFloatingDialog<void>(
+        context: pageKey.currentContext!,
+        id: 'page',
+        title: 'Page',
+        icon: Icons.person,
+        builder: (_) => const SizedBox(),
+      );
+      await tester.pumpAndSettle();
+      holder.minimize('page');
+      await tester.pumpAndSettle();
+      expect(find.byType(FloatingDialogGlassSurface), findsOneWidget);
+
+      // Leaving the page keeps its window.
+      _navigatorKey.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(holder.state.entryOf('page'), isNotNull);
+      expect(find.byType(FloatingDialogGlassSurface), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await holder.close();
+    });
+
+    testWidgets('a holder with its own controller stays separate', (
+      tester,
+    ) async {
+      _desktop(tester);
+      final outer = _cubit();
+      final inner = _cubit();
+      final pageKey = GlobalKey();
+      await tester.pumpWidget(
+        _app(
+          outer,
+          home: FloatingDialogHolder(
+            controller: inner,
+            child: Scaffold(key: pageKey, body: const SizedBox.expand()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(FloatingDialogHolder.of(pageKey.currentContext!), same(inner));
+      await inner.close();
+      await outer.close();
+    });
+  });
+
   group('Animations', () {
     Finder effect() => find.descendant(
       of: find.byType(FloatingDialogEffectsLayer),
